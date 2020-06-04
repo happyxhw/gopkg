@@ -1,6 +1,8 @@
 package config
 
 import (
+	"os"
+
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
 )
@@ -12,7 +14,15 @@ func SetupConfig(configPath string) (*viper.Viper, error) {
 
 func initConfig(configPath string) (*viper.Viper, error) {
 	v := viper.New()
-	v.SetConfigName("config")
+	if os.Getenv("ENV") == "DEV" {
+		v.SetConfigName("dev")
+	} else if os.Getenv("ENV") == "TEST" {
+		v.SetConfigName("test")
+	} else if os.Getenv("ENV") == "PROD" {
+		v.SetConfigName("prod")
+	} else {
+		panic("wrong env not in [DEV, TEST, PROD]")
+	}
 	v.AddConfigPath(configPath)
 	v.SetConfigType("yaml")
 
@@ -30,6 +40,9 @@ func Decode(src, dst interface{}) {
 	err := mapstructure.Decode(src, dst)
 	if err != nil {
 		panic(err)
+	}
+	if dst == nil {
+		panic("no config result")
 	}
 }
 

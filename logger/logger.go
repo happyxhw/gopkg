@@ -121,22 +121,3 @@ func Panic(msg string, fields ...zap.Field) {
 func GetLogger() *zap.Logger {
 	return logger
 }
-
-// Output implements interface for nsq logger
-type nsqLogger struct {
-}
-
-func (n *nsqLogger) Output(_ int, msg string) error {
-	switch msg[:3] {
-	case "ERR":
-		logger.Error(msg[9:])
-	case "WAR":
-		logger.Warn(msg[9:])
-	default:
-		logger.Info(msg[9:])
-	}
-	return nil
-}
-func NewNsqLogger() *nsqLogger {
-	return &nsqLogger{}
-}
