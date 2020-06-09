@@ -8,5 +8,6 @@ require (
 	github.com/jinzhu/gorm v1.9.12
 	github.com/mitchellh/mapstructure v1.3.1
 	github.com/spf13/viper v1.7.0
+	github.com/wantedly/gorm-zap v0.0.0-20171015071652-372d3517a876 // indirect
 	go.uber.org/zap v1.15.0
 )

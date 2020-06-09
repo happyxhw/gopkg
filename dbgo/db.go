@@ -3,11 +3,13 @@ package dbgo
 import (
 	"errors"
 	"fmt"
+	"github.com/happyxhw/gopkg/logger"
 
 	// mysql
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/wantedly/gorm-zap"
 )
 
 type Config struct {
@@ -18,6 +20,7 @@ type Config struct {
 	DB           string
 	MaxIdleConns int `mapstructure:"max_idle_conns"`
 	MaxOpenConns int `mapstructure:"max_open_conns"`
+	Log          bool
 }
 
 func NewMysqlDb(dbConfig *Config) (*gorm.DB, error) {
@@ -26,6 +29,8 @@ func NewMysqlDb(dbConfig *Config) (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	Db.LogMode(dbConfig.Log)
+	Db.SetLogger(gormzap.New(logger.GetLogger()))
 	return Db, nil
 }
 
