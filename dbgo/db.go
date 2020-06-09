@@ -40,6 +40,8 @@ func NewPostgresDb(dbConfig *Config) (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	Db.LogMode(dbConfig.Log)
+	Db.SetLogger(gormzap.New(logger.GetLogger()))
 	return Db, nil
 }
 
