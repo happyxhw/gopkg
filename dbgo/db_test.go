@@ -10,7 +10,7 @@ func TestMysql(t *testing.T) {
 		Password:     "808258",
 		Host:         "127.0.0.1",
 		Port:         "3306",
-		DB:           "micro_recommend",
+		DB:           "mydb",
 		MaxIdleConns: 10,
 		MaxOpenConns: 10,
 	})
@@ -18,7 +18,7 @@ func TestMysql(t *testing.T) {
 		t.Error(err)
 		t.FailNow()
 	}
-
+	db.Exec("select ewqrqre")
 	exists := db.HasTable("news")
 	if !exists {
 		t.Error("table news not exists")
