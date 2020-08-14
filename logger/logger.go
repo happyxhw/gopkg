@@ -79,7 +79,7 @@ func InitLogger(logLevel zapcore.Level, skip int, dev bool) error {
 		config = prodConfig
 		config.DisableCaller = true
 		config.DisableStacktrace = true
-		//config.Sampling = nil
+		config.Sampling = nil
 	}
 	level := zap.NewAtomicLevel()
 	level.SetLevel(logLevel)
