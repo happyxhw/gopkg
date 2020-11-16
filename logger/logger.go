@@ -118,8 +118,8 @@ func Panic(msg string, fields ...zap.Field) {
 	logger.Panic(msg, fields...)
 }
 
-func Named(name string) {
-	logger.Named(name)
+func Named(name string) *zap.Logger {
+	return logger.Named(name)
 }
 
 func GetLogger() *zap.Logger {
