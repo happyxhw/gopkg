@@ -51,7 +51,7 @@ func GinZap(logger *zap.Logger) gin.HandlerFunc {
 				zap.String("err", c.Errors.String()),
 				zap.String("X-Request-Id", reqID),
 			)
-			c.JSON(statusCode, gin.H{"code": statusCode, "msg": "internal error"})
+			c.JSON(statusCode, gin.H{"code": statusCode, "msg": c.Errors.String()})
 		default:
 			logger.Info("[GIN]",
 				zap.Int("code", statusCode),
