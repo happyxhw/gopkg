@@ -5,7 +5,6 @@ import (
 )
 
 // RedisConn redis client
-//var pool *redis.Pool
 
 type Config struct {
 	Host         string

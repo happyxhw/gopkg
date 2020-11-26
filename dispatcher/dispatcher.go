@@ -12,9 +12,13 @@ var (
 	ErrJobTimeout = errors.New("job timeout")
 )
 
+// Job task job
 type Job func() (interface{}, error)
+
+// ResultQueue job result chan
 type ResultQueue chan *JobResult
 
+// JobResult job result
 type JobResult struct {
 	Result interface{}
 	Error  error
@@ -34,36 +38,43 @@ func newWorker(jobTimeout time.Duration) *worker {
 	}
 }
 
+// start worker & waiting for task
 func (w *worker) start(pool chan *worker, resultCh ResultQueue) {
 	go func() {
 		for {
 			pool <- w
 			job, ok := <-w.jobChan
 			if ok {
-				resCh := make(chan interface{})
-				errCh := make(chan error)
-				ctx, cancel := context.WithTimeout(context.TODO(), w.jobTimeout)
-				go func() {
-					res, err := job()
-					if err != nil {
-						errCh <- err
-						close(errCh)
-					} else {
-						resCh <- res
-						close(resCh)
-					}
-				}()
 				var jobRes JobResult
-				select {
-				case res := <-resCh:
+				if w.jobTimeout <= 0 {
+					res, err := job()
 					jobRes.Result = res
-				case err := <-errCh:
 					jobRes.Error = err
-				case <-ctx.Done():
-					jobRes.Error = ErrJobTimeout
+				} else {
+					resCh := make(chan interface{})
+					errCh := make(chan error)
+					ctx, cancel := context.WithTimeout(context.TODO(), w.jobTimeout)
+					go func() {
+						res, err := job()
+						if err != nil {
+							errCh <- err
+							close(errCh)
+						} else {
+							resCh <- res
+							close(resCh)
+						}
+					}()
+					select {
+					case res := <-resCh:
+						jobRes.Result = res
+					case err := <-errCh:
+						jobRes.Error = err
+					case <-ctx.Done():
+						jobRes.Error = ErrJobTimeout
+					}
+					cancel()
 				}
 				resultCh <- &jobRes
-				cancel()
 			} else {
 				w.stopChan <- struct{}{}
 				return
@@ -76,12 +87,12 @@ type dispatcher struct {
 	pool        chan *worker
 	jobQueue    chan Job
 	resultQueue ResultQueue
-	size        int
 	stopChan    chan struct{}
 	stopped     bool
 	lock        *sync.RWMutex
 }
 
+// NewDispatcher init dispatcher
 func NewDispatcher(workerSize int, jobTimeout time.Duration) *dispatcher {
 	d := &dispatcher{
 		jobQueue:    make(chan Job),
@@ -99,6 +110,7 @@ func NewDispatcher(workerSize int, jobTimeout time.Duration) *dispatcher {
 	return d
 }
 
+// start dispatcher
 func (d *dispatcher) dispatcher() {
 	for {
 		job, ok := <-d.jobQueue
@@ -112,6 +124,7 @@ func (d *dispatcher) dispatcher() {
 	}
 }
 
+// Stop dispatcher
 func (d *dispatcher) Stop() {
 	d.lock.Lock()
 	d.stopped = true
@@ -127,6 +140,7 @@ func (d *dispatcher) Stop() {
 	close(d.resultQueue)
 }
 
+// Send task to dispatcher
 func (d *dispatcher) Send(job Job) error {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
@@ -137,6 +151,7 @@ func (d *dispatcher) Send(job Job) error {
 	return nil
 }
 
+// ResultCh: get the result chan
 func (d *dispatcher) ResultCh() ResultQueue {
 	return d.resultQueue
 }

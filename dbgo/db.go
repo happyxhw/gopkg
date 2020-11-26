@@ -3,13 +3,14 @@ package dbgo
 import (
 	"errors"
 	"fmt"
+
 	"github.com/happyxhw/gopkg/logger"
 
 	// mysql
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
-	"github.com/wantedly/gorm-zap"
+	gormZap "github.com/wantedly/gorm-zap"
 )
 
 type Config struct {
@@ -32,7 +33,7 @@ func NewMysqlDb(dbConfig *Config) (*gorm.DB, error) {
 	if dbConfig.Log {
 		Db.LogMode(dbConfig.Log)
 	}
-	Db.SetLogger(gormzap.New(logger.GetLogger()))
+	Db.SetLogger(gormZap.New(logger.GetLogger()))
 	return Db, nil
 }
 
@@ -45,7 +46,7 @@ func NewPostgresDb(dbConfig *Config) (*gorm.DB, error) {
 	if dbConfig.Log {
 		Db.LogMode(dbConfig.Log)
 	}
-	Db.SetLogger(gormzap.New(logger.GetLogger()))
+	Db.SetLogger(gormZap.New(logger.GetLogger()))
 	return Db, nil
 }
 
