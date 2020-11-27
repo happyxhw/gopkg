@@ -13,10 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - name: Set up Go 1.15
+      - name: Set up Go 1.14
         uses: actions/setup-go@v2
         with:
-          go-version: ^1.15
+          go-version: ^1.14
         id: go
 
       - name: Check out code into the Go module directory
@@ -34,4 +34,8 @@ jobs:
       - name: Install Dependencies
 #        if: steps.cache.outputs.cache-hit != 'true'
         run: |
-          go get github.com/golangci/golangci-lint/cmd/golangci-lints
+          go get github.com/golangci/golangci-lint/cmd/golangci-lint@v1.32.2
+
+      - name: CI
+        run: |
+          golangci-lint run
