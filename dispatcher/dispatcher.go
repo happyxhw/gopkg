@@ -3,12 +3,13 @@ package dispatcher
 import (
 	"context"
 	"errors"
-	"sync"
 	"time"
+
+	"go.uber.org/atomic"
 )
 
 var (
-	ErrStopped    = errors.New("dispatcher stopped")
+	ErrStopped    = errors.New("Dispatcher stopped")
 	ErrJobTimeout = errors.New("job timeout")
 )
 
@@ -83,23 +84,21 @@ func (w *worker) start(pool chan *worker, resultCh ResultQueue) {
 	}()
 }
 
-type dispatcher struct {
+type Dispatcher struct {
 	pool        chan *worker
 	jobQueue    chan Job
 	resultQueue ResultQueue
 	stopChan    chan struct{}
-	stopped     bool
-	lock        *sync.RWMutex
+	stopped     atomic.Bool
 }
 
-// NewDispatcher init dispatcher
-func NewDispatcher(workerSize int, jobTimeout time.Duration) *dispatcher {
-	d := &dispatcher{
+// NewDispatcher init Dispatcher
+func NewDispatcher(workerSize int, jobTimeout time.Duration) *Dispatcher {
+	d := &Dispatcher{
 		jobQueue:    make(chan Job),
 		stopChan:    make(chan struct{}),
 		resultQueue: make(ResultQueue),
 		pool:        make(chan *worker, workerSize),
-		lock:        &sync.RWMutex{},
 	}
 
 	for i := 0; i < workerSize; i++ {
@@ -110,8 +109,8 @@ func NewDispatcher(workerSize int, jobTimeout time.Duration) *dispatcher {
 	return d
 }
 
-// start dispatcher
-func (d *dispatcher) dispatcher() {
+// start Dispatcher
+func (d *Dispatcher) dispatcher() {
 	for {
 		job, ok := <-d.jobQueue
 		if ok {
@@ -124,11 +123,9 @@ func (d *dispatcher) dispatcher() {
 	}
 }
 
-// Stop dispatcher
-func (d *dispatcher) Stop() {
-	d.lock.Lock()
-	d.stopped = true
-	d.lock.Unlock()
+// Stop Dispatcher
+func (d *Dispatcher) Stop() {
+	d.stopped.Swap(true)
 	close(d.jobQueue)
 	<-d.stopChan
 
@@ -140,11 +137,9 @@ func (d *dispatcher) Stop() {
 	close(d.resultQueue)
 }
 
-// Send task to dispatcher
-func (d *dispatcher) Send(job Job) error {
-	d.lock.RLock()
-	defer d.lock.RUnlock()
-	if d.stopped {
+// Send task to Dispatcher
+func (d *Dispatcher) Send(job Job) error {
+	if d.stopped.Load() {
 		return ErrStopped
 	}
 	d.jobQueue <- job
@@ -152,6 +147,6 @@ func (d *dispatcher) Send(job Job) error {
 }
 
 // ResultCh: get the result chan
-func (d *dispatcher) ResultCh() ResultQueue {
+func (d *Dispatcher) ResultCh() ResultQueue {
 	return d.resultQueue
 }
