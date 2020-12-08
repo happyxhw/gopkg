@@ -4,13 +4,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/happyxhw/gopkg/logger"
+	"go.uber.org/zap"
 
 	// mysql
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
-	gormZap "github.com/wantedly/gorm-zap"
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 type Config struct {
@@ -21,7 +20,8 @@ type Config struct {
 	DB           string
 	MaxIdleConns int `mapstructure:"max_idle_conns"`
 	MaxOpenConns int `mapstructure:"max_open_conns"`
-	Log          bool
+	Logger       *zap.Logger
+	Level        string
 }
 
 func NewMysqlDb(dbConfig *Config) (*gorm.DB, error) {
@@ -30,10 +30,6 @@ func NewMysqlDb(dbConfig *Config) (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	if dbConfig.Log {
-		Db.LogMode(dbConfig.Log)
-	}
-	Db.SetLogger(gormZap.New(logger.GetLogger()))
 	return Db, nil
 }
 
@@ -43,10 +39,6 @@ func NewPostgresDb(dbConfig *Config) (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	if dbConfig.Log {
-		Db.LogMode(dbConfig.Log)
-	}
-	Db.SetLogger(gormZap.New(logger.GetLogger()))
 	return Db, nil
 }
 
@@ -59,25 +51,32 @@ func createConnection(dbConfig *Config, dbType string) (*gorm.DB, error) {
 	password := dbConfig.Password
 	port := dbConfig.Port
 
+	c := gorm.Config{}
+	if dbConfig.Logger != nil {
+		c.Logger = newLogger(dbConfig.Logger, dbConfig.Level)
+	}
 	if dbType == "mysql" {
 		url := fmt.Sprintf("%s:%s@(%s:%s)/%s?charset=UTF8&parseTime=true", user, password, host, port, dbName)
-		db, err = gorm.Open("mysql", url)
+		db, err = gorm.Open(mysql.Open(url), &c)
 	} else if dbType == "postgres" {
 		url := fmt.Sprintf(
 			"host=%s port=%s user=%s dbname=%s password=%s sslmode=disable",
 			host, port, user, dbName, password,
 		)
-		db, err = gorm.Open("postgres", url)
+		db, err = gorm.Open(postgres.Open(url), &c)
 	} else {
 		return nil, errors.New("unknown db type")
 	}
 
 	if err == nil {
 		if dbConfig.MaxIdleConns != 0 && dbConfig.MaxOpenConns != 0 {
-			db.DB().SetMaxIdleConns(dbConfig.MaxIdleConns)
-			db.DB().SetMaxOpenConns(dbConfig.MaxOpenConns)
+			sqlDB, err2 := db.DB()
+			if err2 != nil {
+				return nil, err2
+			}
+			sqlDB.SetMaxIdleConns(dbConfig.MaxIdleConns)
+			sqlDB.SetMaxOpenConns(dbConfig.MaxOpenConns)
 		}
 	}
-
 	return db, err
 }

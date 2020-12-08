@@ -6,38 +6,51 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestInfoDev(t *testing.T) {
-	_ = SetupLogger(&Config{
-		Level: "info",
-		Dev:   true,
-	})
+func TestConsoleLogger(t *testing.T) {
+	c := Config{
+		Level:       "info",
+		FileName:    "",
+		EncoderType: "console",
+		Caller:      true,
+	}
 
-	Info("hello", zap.String("h", "w"))
+	InitLogger(&c)
+	Info("test", zap.String("1", "2"))
 }
 
-func TestInfoProd(t *testing.T) {
-	_ = SetupLogger(&Config{
-		Level: "info",
-		Dev:   false,
-	})
+func TestJsonLogger(t *testing.T) {
+	c := Config{
+		Level:       "info",
+		FileName:    "",
+		EncoderType: "json",
+		Caller:      true,
+	}
 
-	Info("hello", zap.String("h", "w"))
+	InitLogger(&c)
+	Info("test", zap.String("1", "2"))
 }
 
-func TestErrorDev(t *testing.T) {
-	_ = SetupLogger(&Config{
-		Level: "info",
-		Dev:   true,
-	})
+func TestCallerLogger(t *testing.T) {
+	c := Config{
+		Level:       "info",
+		FileName:    "",
+		EncoderType: "json",
+		Caller:      false,
+	}
 
-	Error("hello", zap.String("h", "w"))
+	InitLogger(&c)
+	Info("test", zap.String("1", "2"))
 }
 
-func TestErrorProd(t *testing.T) {
-	_ = SetupLogger(&Config{
-		Level: "info",
-		Dev:   false,
-	})
+func TestFileLogger(t *testing.T) {
+	c := Config{
+		Level:       "info",
+		FileName:    "./test.log",
+		EncoderType: "json",
+		Caller:      true,
+	}
 
-	Error("hello", zap.String("h", "w"))
+	InitLogger(&c)
+	Info("test", zap.String("1", "2"))
+	Error("test", zap.String("1", "2"))
 }
