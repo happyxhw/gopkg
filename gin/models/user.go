@@ -10,4 +10,6 @@ type BaseUser struct {
 	CreatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP"`
 	UpdatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP"`
 	DeletedAt *time.Time
+
+	Code string `gorm:"-" json:"code"`
 }

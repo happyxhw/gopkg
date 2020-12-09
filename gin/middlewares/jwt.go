@@ -12,7 +12,9 @@ import (
 )
 
 type Auth interface {
-	Registry(*gin.Context)
+	Register(*gin.Context)
+	RequestPass(c *gin.Context)
+	ResetPass(c *gin.Context)
 	Authenticator(c *gin.Context) (interface{}, error)
 	Authorizator(data interface{}, c *gin.Context) bool
 	PayloadFunc(data interface{}) jwt.MapClaims

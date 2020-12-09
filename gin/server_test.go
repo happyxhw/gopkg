@@ -9,6 +9,7 @@ import (
 	"github.com/happyxhw/gopkg/gin/api/v1/user"
 	"github.com/happyxhw/gopkg/gin/middlewares"
 	"github.com/happyxhw/gopkg/gin/models"
+	"github.com/happyxhw/gopkg/goredis"
 	"github.com/happyxhw/gopkg/logger"
 	"go.uber.org/zap"
 )
@@ -37,15 +38,20 @@ func TestServe(t *testing.T) {
 		Logger:       logger.GetLogger().WithOptions(zap.AddCallerSkip(2)),
 		Level:        "info",
 	})
+	red, _ := goredis.NewRedis(&goredis.Config{
+		Host: "127.0.0.1:6379",
+	})
 	_ = db.AutoMigrate(&models.BaseUser{})
 	key, identityKey := "test_key", "email"
-	userHandler := user.NewUser(db, identityKey)
+	userHandler := user.NewUser(db, red, identityKey)
 	jwtHandler := middlewares.NewJwt(key, identityKey, userHandler)
 
 	v1 := r.Group("/api/v1")
-	v1.POST("/auth/register", userHandler.Registry)
+	v1.POST("/auth/register", userHandler.Register)
 	v1.POST("/auth/login", jwtHandler.LoginHandler)
 	v1.GET("/auth/refresh", jwtHandler.RefreshHandler)
+	v1.POST("/auth/request-pass", userHandler.RequestPass)
+	v1.POST("/auth/reset-pass", userHandler.ResetPass)
 
 	Serve(r, &c)
 }

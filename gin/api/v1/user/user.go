@@ -1,10 +1,15 @@
 package user
 
 import (
+	"crypto/rand"
+	"fmt"
+	"math/big"
 	"net/http"
+	"time"
 
 	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v7"
 	"github.com/happyxhw/gopkg/gin/models"
 	"github.com/happyxhw/gopkg/logger"
 	"github.com/pkg/errors"
@@ -14,25 +19,30 @@ import (
 )
 
 var (
-	ErrParam      = errors.New("invalid parameters")
-	ErrExists     = errors.New("email exists")
-	ErrDbInternal = errors.New("internal db error")
+	ErrParam         = errors.New("invalid parameters")
+	ErrExists        = errors.New("email exists")
+	ErrNotExists     = errors.New("user not exists")
+	ErrDbInternal    = errors.New("internal db error")
+	ErrRedisInternal = errors.New("internal redis error")
+	ErrCode          = errors.New("validate code error")
 )
 
 type User struct {
 	db          *gorm.DB
+	red         *redis.Client
 	identityKey string
 }
 
-func NewUser(db *gorm.DB, identityKey string) *User {
+func NewUser(db *gorm.DB, red *redis.Client, identityKey string) *User {
 	u := User{
 		db:          db,
+		red:         red,
 		identityKey: identityKey,
 	}
 	return &u
 }
 
-func (u User) Registry(c *gin.Context) {
+func (u User) Register(c *gin.Context) {
 	var user models.BaseUser
 	if err := c.ShouldBindJSON(&user); err != nil {
 		_ = c.AbortWithError(http.StatusBadRequest, ErrParam)
@@ -57,6 +67,68 @@ func (u User) Registry(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"code": http.StatusCreated,
 		"msg":  "ok",
+	})
+}
+
+func (u User) RequestPass(c *gin.Context) {
+	var user models.BaseUser
+	if err := c.ShouldBindJSON(&user); err != nil {
+		_ = c.AbortWithError(http.StatusBadRequest, ErrParam)
+		return
+	}
+
+	var dbUser models.BaseUser
+	_ = u.db.Select("id").Where("email = ?", user.Email).First(&dbUser).Error
+	if dbUser.ID == 0 {
+		_ = c.AbortWithError(http.StatusBadRequest, ErrNotExists)
+		return
+	}
+
+	code := getRandomString(7)
+	err := u.red.Set(fmt.Sprintf("validation_%d", dbUser.ID), code, time.Minute*5).Err()
+	if err != nil {
+		_ = c.AbortWithError(http.StatusInternalServerError, ErrRedisInternal)
+		return
+	}
+	/*
+	   sending code to email
+	*/
+	c.JSON(http.StatusOK, gin.H{
+		"code": http.StatusOK,
+		"msg":  "ok",
+	})
+}
+
+func (u User) ResetPass(c *gin.Context) {
+	user := models.BaseUser{}
+	if err := c.ShouldBindJSON(&user); err != nil || user.Password == "" {
+		_ = c.AbortWithError(http.StatusBadRequest, ErrParam)
+		return
+	}
+
+	var dbUser models.BaseUser
+	_ = u.db.Select("id").Where("email = ?", user.Email).First(&dbUser).Error
+	if dbUser.ID == 0 {
+		_ = c.AbortWithError(http.StatusBadRequest, ErrNotExists)
+		return
+	}
+
+	code, err := u.red.Get(fmt.Sprintf("validation_%d", dbUser.ID)).Result()
+	if err != nil || code != user.Code {
+		_ = c.AbortWithError(http.StatusBadRequest, ErrCode)
+		return
+	}
+
+	passwordByte, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	newPassword := string(passwordByte)
+	err = u.db.Model(&models.BaseUser{}).Where("email = ?", user.Email).Update("password", newPassword).Error
+	if err != nil {
+		_ = c.AbortWithError(http.StatusInternalServerError, ErrDbInternal)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"code": http.StatusOK,
+		"msg":  "success",
 	})
 }
 
@@ -93,4 +165,18 @@ func (u User) PayloadFunc(data interface{}) jwt.MapClaims {
 
 func (u User) Unauthorized(c *gin.Context, code int, msg string) {
 	_ = c.AbortWithError(code, errors.New(msg))
+}
+
+// getRandomString 随机生成大写字母和数字组合
+func getRandomString(l int) string {
+	str := "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	bytes := []byte(str)
+	n := int64(len(bytes))
+	var result []byte
+	for i := 0; i < l; i++ {
+		t, _ := rand.Int(rand.Reader, big.NewInt(n))
+		result = append(result, bytes[t.Int64()])
+	}
+	return string(result)
+
 }
