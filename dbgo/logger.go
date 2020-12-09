@@ -74,12 +74,12 @@ func (gl gormLogger) Trace(_ context.Context, begin time.Time, fc func() (string
 	switch {
 	case err != nil && gl.LogLevel >= gLogger.Error:
 		sql, rows := fc()
-		gl.logger.Error("trace", zap.Error(err), zap.Duration("elapsed", elapsed), zap.Int64("rows", rows), zap.String("sql", sql))
+		gl.logger.Error("trace", zap.Error(err), zap.String("elapsed", elapsed.String()), zap.Int64("rows", rows), zap.String("sql", sql))
 	case gl.SlowThreshold != 0 && elapsed > gl.SlowThreshold && gl.LogLevel >= gLogger.Warn:
 		sql, rows := fc()
-		gl.logger.Warn("trace", zap.Duration("elapsed", elapsed), zap.Int64("rows", rows), zap.String("sql", sql))
+		gl.logger.Warn("trace", zap.String("elapsed", elapsed.String()), zap.Int64("rows", rows), zap.String("sql", sql))
 	case gl.LogLevel >= gLogger.Info:
 		sql, rows := fc()
-		gl.logger.Info("trace", zap.Duration("elapsed", elapsed), zap.Int64("rows", rows), zap.String("sql", sql))
+		gl.logger.Info("trace", zap.String("elapsed", elapsed.String()), zap.Int64("rows", rows), zap.String("sql", sql))
 	}
 }
