@@ -3,6 +3,7 @@ module github.com/happyxhw/gopkg
 go 1.14
 
 require (
+	github.com/appleboy/gin-jwt/v2 v2.6.4
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-contrib/pprof v1.3.0
@@ -14,6 +15,7 @@ require (
 	github.com/jehiah/go-strftime v0.0.0-20171201141054-1d33003b3869 // indirect
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/lestrrat-go/strftime v1.0.3 // indirect
+	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v0.9.3
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.7.0
@@ -21,7 +23,7 @@ require (
 	go.uber.org/atomic v1.7.0
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.16.0
-	golang.org/x/crypto v0.0.0-20201203163018-be400aefbc4c // indirect
+	golang.org/x/crypto v0.0.0-20201203163018-be400aefbc4c
 	golang.org/x/text v0.3.4 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/grpc v1.27.0
