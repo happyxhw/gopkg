@@ -1,5 +1,12 @@
 package trie
 
+const (
+	SuffixSearch = iota + 1
+	SuffixMaxSearch
+	SuffixMinSearch
+	AllSearch
+)
+
 type Node struct {
 	childrenMap map[rune]*Node
 	isWordEnd   bool
@@ -60,22 +67,26 @@ func (t *Trie) Find(word string) bool {
 }
 
 // Search tree of content
-// isSuffix: 词典 “中国人民”，“人民”，“中国”
-// true: “中国人民” 将优先匹配 “中国” “中国人民” 不匹配 “人民”
-// false: “中国人民” 将匹配 “中国” “中国人民” 和 “人民”
-func (t *Trie) Search(content string, isSuffix bool) []*SearchResult {
+// 词典： “中国人民”，“人民”，“中国”
+// 搜索词：“中国人民”
+// SuffixSearch     : 中国，中国人民
+// SuffixMaxSearch  : 中国人民
+// SuffixMinSearch  : 中国，人民
+// AllSearch        : 中国，人民，中国人民
+func (t *Trie) Search(content string, searchType int) []*SearchResult {
 	var res []*SearchResult
 	s := []rune(content)
 	n := len(s)
 	i := 0
-	current := t.root
+LOOP:
 	for i < n {
 		gap := 1
 		cur, start := i, i
+		current := t.root
+		var temp []*SearchResult
 		for current != nil && cur < n {
 			if item, ok := current.childrenMap[s[cur]]; !ok {
 				i++
-				current = t.root
 				break
 			} else {
 				gap++
@@ -89,9 +100,25 @@ func (t *Trie) Search(content string, isSuffix bool) []*SearchResult {
 						WordType: item.wordType,
 						Word:     string(s[start:end]),
 					}
-					res = append(res, &v)
-					if isSuffix {
+					switch searchType {
+					case SuffixSearch:
+						res = append(res, &v)
 						i = end
+					case SuffixMaxSearch:
+						temp = append(temp, &v)
+						i = end
+						if current == nil || cur >= n || current.childrenMap[s[cur]] == nil {
+							if len(temp) > 0 {
+								res = append(res, temp[len(temp)-1])
+							}
+						}
+					case SuffixMinSearch:
+						res = append(res, &v)
+						i = end
+						goto LOOP
+					case AllSearch:
+						res = append(res, &v)
+						i++
 					}
 				}
 			}
