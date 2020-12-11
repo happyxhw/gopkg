@@ -36,9 +36,8 @@ func NewTrie() *Trie {
 
 // Insert insert word to the tree
 func (t *Trie) Insert(word string, wordType int) {
-	s := []rune(word)
 	current := t.root
-	for _, item := range s {
+	for _, item := range word {
 		if _, ok := current.childrenMap[item]; !ok {
 			current.childrenMap[item] = &Node{
 				childrenMap: make(map[rune]*Node),
@@ -52,18 +51,14 @@ func (t *Trie) Insert(word string, wordType int) {
 
 // Find certain word
 func (t *Trie) Find(word string) bool {
-	s := []rune(word)
 	current := t.root
-	for _, item := range s {
+	for _, item := range word {
 		if _, ok := current.childrenMap[item]; !ok {
 			return false
 		}
 		current = current.childrenMap[item]
 	}
-	if current.isWordEnd {
-		return true
-	}
-	return false
+	return current.isWordEnd
 }
 
 // Search tree of content
@@ -87,7 +82,7 @@ LOOP:
 		for current != nil && cur < n {
 			if item, ok := current.childrenMap[s[cur]]; !ok {
 				i++
-				break
+				goto LOOP
 			} else {
 				gap++
 				current = item
@@ -111,6 +106,7 @@ LOOP:
 							if len(temp) > 0 {
 								res = append(res, temp[len(temp)-1])
 							}
+							goto LOOP
 						}
 					case SuffixMinSearch:
 						res = append(res, &v)
@@ -118,7 +114,10 @@ LOOP:
 						goto LOOP
 					case AllSearch:
 						res = append(res, &v)
-						i++
+						if current == nil || cur >= n || current.childrenMap[s[cur]] == nil {
+							i++
+							goto LOOP
+						}
 					}
 				}
 			}
