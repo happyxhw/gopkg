@@ -7,11 +7,11 @@ import (
 
 func TestTrie_Search(t1 *testing.T) {
 	trie := NewTrie()
-	words := []string{"中国人民", "中国", "人民"}
+	words := []string{"中国人民", "中国", "人民", "伟大"}
 	for _, item := range words {
 		trie.Insert(item, 1)
 	}
-	content := "中国人民"
+	content := "中国人民真伟大"
 
 	fmt.Println("SuffixSearch")
 	resList := trie.Search(content, SuffixSearch)
