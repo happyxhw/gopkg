@@ -10,13 +10,13 @@ const (
 type Node struct {
 	childrenMap map[rune]*Node
 	isWordEnd   bool
-	wordType    int
+	wordType    string
 }
 
 type SearchResult struct {
 	Start    int
 	End      int
-	WordType int
+	WordType string
 	Word     string
 }
 
@@ -35,7 +35,7 @@ func NewTrie() *Trie {
 }
 
 // Insert insert word to the tree
-func (t *Trie) Insert(word string, wordType int) {
+func (t *Trie) Insert(word string, wordType string) {
 	current := t.root
 	for _, item := range word {
 		if _, ok := current.childrenMap[item]; !ok {
@@ -50,15 +50,15 @@ func (t *Trie) Insert(word string, wordType int) {
 }
 
 // Find certain word
-func (t *Trie) Find(word string) bool {
+func (t *Trie) Find(word string) (bool, string) {
 	current := t.root
 	for _, item := range word {
 		if _, ok := current.childrenMap[item]; !ok {
-			return false
+			return false, ""
 		}
 		current = current.childrenMap[item]
 	}
-	return current.isWordEnd
+	return current.isWordEnd, current.wordType
 }
 
 // Search tree of content
@@ -75,20 +75,24 @@ func (t *Trie) Search(content string, searchType int) []*SearchResult {
 	i := 0
 LOOP:
 	for i < n {
-		gap := 1
+		gap := 0
 		cur, start := i, i
 		current := t.root
 		var temp []*SearchResult
-		for current != nil && cur < n {
-			if item, ok := current.childrenMap[s[cur]]; !ok {
+		for {
+			if current == nil || cur >= n || current.childrenMap[s[cur]] == nil {
+				if searchType == SuffixMaxSearch && len(temp) > 0 {
+					res = append(res, temp[len(temp)-1])
+				}
 				i++
 				goto LOOP
 			} else {
+				item := current.childrenMap[s[cur]]
 				gap++
 				current = item
 				cur++
 				if item.isWordEnd {
-					end := start + gap - 1
+					end := start + gap
 					v := SearchResult{
 						Start:    start,
 						End:      end,
@@ -102,7 +106,7 @@ LOOP:
 					case SuffixMaxSearch:
 						temp = append(temp, &v)
 						i = end
-						if current == nil || cur >= n || current.childrenMap[s[cur]] == nil {
+						if current == nil || i>=n || cur >= n || current.childrenMap[s[cur]] == nil {
 							if len(temp) > 0 {
 								res = append(res, temp[len(temp)-1])
 							}
