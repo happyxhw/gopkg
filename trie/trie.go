@@ -35,7 +35,7 @@ func NewTrie() *Trie {
 }
 
 // Insert insert word to the tree
-func (t *Trie) Insert(word string, wordType string) {
+func (t *Trie) Insert(word, wordType string) {
 	current := t.root
 	for _, item := range word {
 		if _, ok := current.childrenMap[item]; !ok {
@@ -50,7 +50,7 @@ func (t *Trie) Insert(word string, wordType string) {
 }
 
 // Find certain word
-func (t *Trie) Find(word string) (bool, string) {
+func (t *Trie) Find(word string) (isWordEnd bool, wordType string) {
 	current := t.root
 	for _, item := range word {
 		if _, ok := current.childrenMap[item]; !ok {
@@ -106,7 +106,7 @@ LOOP:
 					case SuffixMaxSearch:
 						temp = append(temp, &v)
 						i = end
-						if current == nil || i>=n || cur >= n || current.childrenMap[s[cur]] == nil {
+						if current == nil || i >= n || cur >= n || current.childrenMap[s[cur]] == nil {
 							if len(temp) > 0 {
 								res = append(res, temp[len(temp)-1])
 							}
@@ -129,4 +129,87 @@ LOOP:
 
 	}
 	return res
+}
+
+func MinEditDistance(word1, word2 string) int {
+	m, n := len(word1), len(word2)
+	cur, pre := make([]int, n+1), make([]int, n+1)
+	for j := 1; j < n+1; j++ {
+		pre[j] = j
+	}
+	for i := 1; i <= m; i++ {
+		cur[0] = i
+		for j := 1; j <= n; j++ {
+			if word1[i-1] == word2[j-1] {
+				cur[j] = pre[j-1]
+			} else {
+				cur[j] = min(pre[j-1], min(pre[j], cur[j-1])) + 1
+			}
+		}
+		for i := range pre {
+			pre[i] = 0
+		}
+		pre, cur = cur, pre
+	}
+
+	return pre[n]
+}
+
+func CommonPrefix(word1, word2 string) int {
+	m, n := len(word1), len(word2)
+	var c int
+	for i := 0; i < m && i < n; i++ {
+		if word1[i] == word2[i] {
+			c++
+		} else {
+			break
+		}
+	}
+	return c
+}
+
+func min(x, y int) int {
+	if x < y {
+		return x
+	}
+	return y
+}
+
+func VagueSearch(keyword string, enWords []string) string {
+	if len(enWords) == 0 {
+		return ""
+	}
+	// 前缀匹配
+	n := float32(len(enWords))
+	var word string
+	var maxScore float32
+
+	for _, item := range enWords {
+		c := float32(CommonPrefix(keyword, item))
+		score := c / n
+		// 匹配的前缀占一半比例
+		if score > 0.5 && c/float32(len(item)) > 0.5 {
+			if score > maxScore {
+				maxScore = score
+				word = item
+			}
+		}
+	}
+	if word != "" {
+		return word
+	}
+
+	// 编辑距离
+	minDis := 1000
+	for _, item := range enWords {
+		dis := MinEditDistance(keyword, item)
+		if dis == 0 {
+			return item
+		}
+		if dis <= 2 && dis < minDis {
+			minDis = dis
+			word = item
+		}
+	}
+	return word
 }
