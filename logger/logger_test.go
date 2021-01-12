@@ -10,7 +10,7 @@ func TestConsoleLogger(t *testing.T) {
 	c := Config{
 		Level:       "info",
 		FileName:    "",
-		EncoderType: "console",
+		EncoderType: "json",
 		Caller:      true,
 	}
 

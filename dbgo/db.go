@@ -16,7 +16,7 @@ type Config struct {
 	User         string
 	Password     string
 	Host         string
-	Port         string
+	Port         int
 	DB           string
 	MaxIdleConns int `mapstructure:"max_idle_conns"`
 	MaxOpenConns int `mapstructure:"max_open_conns"`
@@ -50,17 +50,23 @@ func createConnection(dbConfig *Config, dbType string) (*gorm.DB, error) {
 	dbName := dbConfig.DB
 	password := dbConfig.Password
 	port := dbConfig.Port
+	if port == 0 {
+		port = 3306
+	}
+	if host == "" {
+		host = "127.0.0.1"
+	}
 
 	c := gorm.Config{}
 	if dbConfig.Logger != nil {
 		c.Logger = newLogger(dbConfig.Logger, dbConfig.Level)
 	}
 	if dbType == "mysql" {
-		url := fmt.Sprintf("%s:%s@(%s:%s)/%s?charset=UTF8&parseTime=true", user, password, host, port, dbName)
+		url := fmt.Sprintf("%s:%s@(%s:%d)/%s?charset=UTF8&parseTime=true", user, password, host, port, dbName)
 		db, err = gorm.Open(mysql.Open(url), &c)
 	} else if dbType == "postgres" {
 		url := fmt.Sprintf(
-			"host=%s port=%s user=%s dbname=%s password=%s sslmode=disable",
+			"host=%s port=%d user=%s dbname=%s password=%s sslmode=disable",
 			host, port, user, dbName, password,
 		)
 		db, err = gorm.Open(postgres.Open(url), &c)

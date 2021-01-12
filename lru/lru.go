@@ -45,7 +45,7 @@ func (lru *LRU) Get(key int) int {
 	}
 }
 
-func (lru *LRU) Put(key int, value int) {
+func (lru *LRU) Put(key, value int) {
 	lru.Lock()
 	defer lru.Unlock()
 	if node, ok := lru.Cache[key]; ok {

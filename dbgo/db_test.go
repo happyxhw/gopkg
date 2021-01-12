@@ -14,7 +14,7 @@ func TestMysql(t *testing.T) {
 		User:         "happyxhw",
 		Password:     "808258XXxx",
 		Host:         "127.0.0.1",
-		Port:         "5432",
+		Port:         5432,
 		DB:           "stravadb",
 		MaxIdleConns: 10,
 		MaxOpenConns: 10,
