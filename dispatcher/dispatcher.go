@@ -3,9 +3,8 @@ package dispatcher
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
-
-	"go.uber.org/atomic"
 )
 
 var (
@@ -85,11 +84,13 @@ func (w *worker) start(pool chan *worker, resultCh ResultQueue) {
 }
 
 type Dispatcher struct {
+	sync.RWMutex
+
 	pool        chan *worker
 	jobQueue    chan Job
 	resultQueue ResultQueue
 	stopChan    chan struct{}
-	stopped     atomic.Bool
+	stopped     bool
 }
 
 // NewDispatcher init Dispatcher
@@ -125,8 +126,10 @@ func (d *Dispatcher) dispatcher() {
 
 // Stop Dispatcher
 func (d *Dispatcher) Stop() {
-	d.stopped.Swap(true)
+	d.Lock()
+	d.stopped = true
 	close(d.jobQueue)
+	d.Unlock()
 	<-d.stopChan
 
 	for i := 0; i < cap(d.pool); i++ {
@@ -139,7 +142,9 @@ func (d *Dispatcher) Stop() {
 
 // Send task to Dispatcher
 func (d *Dispatcher) Send(job Job) error {
-	if d.stopped.Load() {
+	d.RLock()
+	defer d.RUnlock()
+	if d.stopped {
 		return ErrStopped
 	}
 	d.jobQueue <- job
