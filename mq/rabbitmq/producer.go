@@ -1,17 +1,9 @@
 package rabbitmq
 
 import (
-	"errors"
-
 	"github.com/happyxhw/gopkg/logger"
 	"github.com/streadway/amqp"
 	"go.uber.org/zap"
-)
-
-var (
-	ReturnErr  = errors.New("return err")
-	NAckErr    = errors.New("nack")
-	PublishErr = errors.New("publish err")
 )
 
 type Producer struct {
@@ -68,14 +60,13 @@ func NewProducer(url, exName, exType string) (*Producer, error) {
 	return &p, nil
 }
 
-func (p *Producer) Publish(msg amqp.Publishing, key string) (*amqp.Return, error) {
-	var err error
-	err = p.channel.Publish(
+func (p *Producer) Publish(msg *amqp.Publishing, key string) (*amqp.Return, error) {
+	err := p.channel.Publish(
 		p.exchangeName,
 		key,
 		true,
 		false,
-		msg,
+		*msg,
 	)
 	if err != nil {
 		logger.Error("publish", zap.Error(err))

@@ -1,6 +1,7 @@
 package rabbitmq
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
@@ -22,15 +23,17 @@ func TestProducer_Publish(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	msg := amqp.Publishing{
-		ContentType: "text/plain",
-		Body:        []byte("hello world"),
-	}
+	var i int64
 	for {
-		_, err = p.Publish(msg, key)
+		msg := amqp.Publishing{
+			ContentType: "text/plain",
+			Body:        []byte("hello world " + strconv.FormatInt(i, 10)),
+		}
+		_, err = p.Publish(&msg, key)
 		if err != nil {
 			t.Error(err)
 		}
+		i++
 		time.Sleep(time.Second)
 	}
 }
