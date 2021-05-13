@@ -65,7 +65,6 @@ linters:
     - gosimple
     - unused
     - prealloc
-    - scopelint
     - gocritic
     - goimports
     - unconvert
