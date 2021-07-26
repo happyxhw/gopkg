@@ -6,15 +6,13 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-	"gorm.io/gorm/logger"
 	gLogger "gorm.io/gorm/logger"
 )
 
 type gormLogger struct {
-	logger           *zap.Logger
-	LogLevel         gLogger.LogLevel
-	SlowThreshold    time.Duration
-	SkipCallerLookup bool
+	logger        *zap.Logger
+	LogLevel      gLogger.LogLevel
+	SlowThreshold time.Duration
 }
 
 func newLogger(l *zap.Logger, level string) gormLogger {
@@ -22,26 +20,26 @@ func newLogger(l *zap.Logger, level string) gormLogger {
 	switch strings.ToLower(level) {
 	case "info":
 		ll = gLogger.Info
+	case "warn":
+		ll = gLogger.Warn
 	case "error":
 		ll = gLogger.Error
 	case "silent":
 		ll = gLogger.Silent
 	}
 	gl := gormLogger{
-		logger:           l,
-		LogLevel:         ll,
-		SlowThreshold:    time.Second,
-		SkipCallerLookup: true,
+		logger:        l,
+		LogLevel:      ll,
+		SlowThreshold: time.Second,
 	}
 	return gl
 }
 
-func (gl gormLogger) LogMode(level logger.LogLevel) logger.Interface {
+func (gl gormLogger) LogMode(level gLogger.LogLevel) gLogger.Interface {
 	return gormLogger{
-		logger:           gl.logger,
-		LogLevel:         level,
-		SlowThreshold:    gl.SlowThreshold,
-		SkipCallerLookup: gl.SkipCallerLookup,
+		logger:        gl.logger,
+		LogLevel:      level,
+		SlowThreshold: gl.SlowThreshold,
 	}
 }
 

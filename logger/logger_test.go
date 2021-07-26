@@ -1,56 +1,15 @@
-package logger
+package logger_test
 
 import (
+	"errors"
 	"testing"
+
+	"github.com/happyxhw/gopkg/logger"
 
 	"go.uber.org/zap"
 )
 
-func TestConsoleLogger(t *testing.T) {
-	c := Config{
-		Level:       "info",
-		FileName:    "",
-		EncoderType: "json",
-		Caller:      true,
-	}
-
-	InitLogger(&c)
-	Info("test", zap.String("1", "2"))
-}
-
-func TestJsonLogger(t *testing.T) {
-	c := Config{
-		Level:       "info",
-		FileName:    "",
-		EncoderType: "json",
-		Caller:      true,
-	}
-
-	InitLogger(&c)
-	Info("test", zap.String("1", "2"))
-}
-
-func TestCallerLogger(t *testing.T) {
-	c := Config{
-		Level:       "info",
-		FileName:    "",
-		EncoderType: "json",
-		Caller:      false,
-	}
-
-	InitLogger(&c)
-	Info("test", zap.String("1", "2"))
-}
-
-func TestFileLogger(t *testing.T) {
-	c := Config{
-		Level:       "info",
-		FileName:    "./test.log",
-		EncoderType: "json",
-		Caller:      true,
-	}
-
-	InitLogger(&c)
-	Info("test", zap.String("1", "2"))
-	Error("test", zap.String("1", "2"))
+func TestError(t *testing.T) {
+	logger.InitLogger(zap.InfoLevel, "", logger.ConsoleEncoder, zap.AddCallerSkip(1), zap.AddCaller())
+	logger.Error("hello", zap.String("key", "value"), zap.Error(errors.New("test")))
 }
